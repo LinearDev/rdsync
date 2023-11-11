@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+message Table {
+    required int64 key = 1;
+    required string value = 2;
+    required string type = 3;
+}

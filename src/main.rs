@@ -3,14 +3,15 @@
 pub mod protos;
 pub mod db;
 pub mod config;
+pub mod rdsync;
 
 fn main() {
     // env::set_var("OUT_DIR", "./");
     // build::run();
 
-    let status = config::read_config();
-    if !status.1 {
-        println!("[ ERROR ] main can not read config");
-        return;
-    }
+    config::read_config().expect("[ ERROR ] Main: Can not read config");
+
+    if !db::init() {
+        print!("[ ERROR ] Main: Can not init DataBase")
+    };
 }

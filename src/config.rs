@@ -2,38 +2,40 @@ use std::fs;
 use toml::Value;
 use lazy_static::lazy_static;
 
+#[derive(Debug)]
 pub struct Config {
-    db_path: String
+    pub db_path: String,
+}
+
+#[derive(Debug)]
+pub enum ConfigError {
+    IoError(std::io::Error),
+    TomlError(toml::de::Error),
 }
 
 lazy_static! {
-    pub static ref CONFIG: Config = read_config().0;
+    pub static ref CONFIG: Config = read_config().unwrap_or_else(|e| {
+        eprintln!("Error reading configuration: {:?}", e);
+        Default::default()
+    });
 }
 
-pub fn read_config() -> (Config, bool) {
-    let mut conf: Config = Config { db_path: "".to_string() };
-     // Read the contents of the TOML file into a string
-     let toml_str = match fs::read_to_string("config.toml") {
-        Ok(content) => content,
-        Err(e) => {
-            eprintln!("Error reading the file: {}", e);
-            return (conf, false);
-        }
-    };
+impl Default for Config {
+    fn default() -> Self {
+        Config { db_path: "".to_string() }
+    }
+}
 
-    // Parse the TOML string into a `toml::Value`
-    let toml_value: Value = match toml::from_str(&toml_str) {
-        Ok(value) => value,
-        Err(e) => {
-            eprintln!("Error parsing TOML: {}", e);
-            return (conf, false);
-        }
-    };
+pub fn read_config() -> Result<Config, ConfigError> {
+    let mut conf = Config::default();
 
-    // Access specific values in the TOML structure
+    let toml_str = fs::read_to_string("config.toml").map_err(ConfigError::IoError)?;
+
+    let toml_value: Value = toml::from_str(&toml_str).map_err(ConfigError::TomlError)?;
+
     if let Some(patn) = toml_value["NAME"].as_str() {
         conf.db_path = patn.to_string();
     }
 
-    return (conf, true);
+    Ok(conf)
 }

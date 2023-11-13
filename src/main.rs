@@ -4,6 +4,8 @@ pub mod protos;
 pub mod db;
 pub mod config;
 pub mod rdsync;
+pub mod cache;
+pub mod tests;
 
 fn main() {
     // env::set_var("OUT_DIR", "./");

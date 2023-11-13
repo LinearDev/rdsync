@@ -1,9 +1,8 @@
 pub mod table;
 pub mod row;
 
-use std::{fs, path::Path};
-
 use crate::config;
+use std::{fs, path::Path};
 
 /**
  * Initialize directory on patch

@@ -4,6 +4,9 @@ pub mod protos;
 pub mod db;
 pub mod config;
 pub mod rdsync;
+pub mod cache;
+pub mod tests;
+pub mod http;
 
 fn main() {
     // env::set_var("OUT_DIR", "./");
@@ -14,4 +17,6 @@ fn main() {
     if !db::init() {
         print!("[ ERROR ] Main: Can not init DataBase")
     };
+
+    http::start();
 }

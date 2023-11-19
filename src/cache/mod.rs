@@ -1,13 +1,13 @@
-// use once_cell::sync::Lazy;
+pub mod cache_table;
 
-use crate::db::{self, row};
+use crate::db::{row, table};
 use crate::protos::row::Row;
-use std::{collections::HashMap, sync::{Mutex, MutexGuard}, time::{SystemTime, UNIX_EPOCH}};
+use crate::cache::cache_table::Cache;
+
+use std::{sync::Mutex, time::{SystemTime, UNIX_EPOCH}};
 use lazy_static::lazy_static;
 
-pub struct Cache {
-    data: HashMap<String, Row>,
-}
+use self::cache_table::TimeCache;
 
 struct CacheKey {
     db: String,
@@ -15,44 +15,9 @@ struct CacheKey {
     key: String
 }
 
-impl Cache {
-    fn new() -> Self {
-        Self {
-            data: HashMap::new()
-        }
-    }
-
-    fn get(&self, key: &str) -> Option<&Row> {
-        self.data.get(key)
-    }
-
-    fn insert(&mut self, key: String, event: Row) {
-        self.data.insert(key, event);
-    }
-
-    // fn insert_many(&mut self, keys: &[String]) {
-    //     for key in keys {
-    //         let event_data = db::get_data_on(key.clone());
-    //         self.insert(key.clone(), event_data);
-    //     }
-    // }
-
-    fn keys(&self) -> Vec<String> {
-        self.data.keys().cloned().collect()
-    }
-
-    fn remove_one(&mut self, key: &str) -> Option<Row> {
-        self.data.remove(key)
-    }
-
-    fn clear(&mut self) {
-        self.data.clear();
-    }
-}
-
 // static mut CACHE: Cache = Cache::new();
 lazy_static! {
-    static ref CACHE: Mutex<Cache> = Mutex::new(Cache::new());
+    pub  static ref CACHE: Mutex<Cache> = Mutex::new(Cache::new(10));
 }
 
 /**
@@ -71,7 +36,15 @@ pub fn add(db: &str, table: &str, key: &str, value: &str) -> bool {
     let row_type = row::detect_str_type(value);
     row.set_type(row_type.to_string());
 
-    cache.insert(to_cache_string(db, table, key).to_string(), row.clone());
+    let cache_key = to_cache_string(db, table, key).to_string();
+    cache.insert(cache_key.clone(), row.clone());
+
+    //update time when updated
+    cache.safe_time_insert(&cache_key, TimeCache {
+        last_accessed: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(),
+        data_length: value.len()
+    });
+    
     row::add_row(db, table, key, value);
 
     return true;
@@ -92,7 +65,10 @@ pub fn get(db: &str, table: &str, key: &str) -> Result<Row, String> {
 
     match row {
         Ok(r) => {
-            cache.insert(to_cache_string(db, table, key), r.clone());
+            let cache_key = to_cache_string(db, table, key);
+            cache.insert(cache_key.clone(), r.clone());
+            cache.update_last_accessed(&cache_key);
+
             return Ok(r)
         },
         Err(_) => return Err("[ ERROR ] Data not exist".to_string())
@@ -102,9 +78,19 @@ pub fn get(db: &str, table: &str, key: &str) -> Result<Row, String> {
 /**
  * Deletes row from cache and from file db
  */
-pub fn delete(db: &str, table: &str, key: &str) {
-    CACHE.lock().unwrap().remove_one(&to_cache_string(db, table, key));
-    row::delete_row(db, table, key);
+pub fn delete(db: &str, table: &str, key: &str) -> Result<String, String> {
+    let mut cache = CACHE.lock().unwrap();
+    let cache_key = to_cache_string(db, table, key);
+    
+    cache.data.remove(&cache_key);
+    cache.time_data.remove(&cache_key);
+
+    let status = row::delete_row(db, table, key);
+    if status {
+        return Ok(format!("Row with key {} was deleted", key.to_string()));
+    } else {
+        return Err(format!("Cant delete row with key {}", key.to_string()));
+    }
 }
 
 pub fn keys() -> Vec<String> {
@@ -133,6 +119,30 @@ fn from_cache_string(cache_string: String) -> CacheKey {
     key.key = cs_split[2].to_string();
 
     return key;
+}
+
+pub fn delete_table(db: &str, name: &str) -> bool {
+    let status = table::delete_table(db, name);
+    if !status {
+        return false;
+    }
+
+    let mut cache = CACHE.lock().unwrap();
+    let keys_to_delete: Vec<String> = cache
+        .time_data
+        .keys()
+        .filter(|key| {
+            let data = from_cache_string(key.to_string());
+            data.db == db && data.table == name
+        })
+        .cloned()
+        .collect();
+
+    for key in keys_to_delete {
+        cache.delete(&key);
+    }
+
+    return true;
 }
 
 // pub fn insert_proto(event: Row) {

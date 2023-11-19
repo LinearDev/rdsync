@@ -5,7 +5,7 @@ use lazy_static::lazy_static;
 #[derive(Debug)]
 pub struct Config {
     pub db_path: String,
-    pub port: String
+    pub port: u16
 }
 
 #[derive(Debug)]
@@ -25,7 +25,7 @@ impl Default for Config {
     fn default() -> Self {
         Config { 
             db_path: "".to_string(),
-            port: "".to_string()
+            port: 3000
         }
     }
 }
@@ -41,8 +41,8 @@ pub fn read_config() -> Result<Config, ConfigError> {
         conf.db_path = patn.to_string();
     }
 
-    if let Some(port) = toml_value["PORT"].as_str() {
-        conf.port = port.to_string();
+    if let Some(port) = toml_value["PORT"].as_integer() {
+        conf.port = port.try_into().unwrap();
     }
 
     Ok(conf)

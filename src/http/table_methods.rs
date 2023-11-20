@@ -1,7 +1,7 @@
-use crate::{http::{err_resp, ok_resp}, db::table::create_table, cache::delete_table};
+use crate::{http::{err_resp, ok_resp}, db::table::{create_table, get_table}, cache::delete_table};
 
 use std::convert::Infallible;
-use hyper::{Request, Body, Response};
+use hyper::{Request, Body, Response, header::CONTENT_TYPE};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -10,7 +10,48 @@ struct CreateReq {
     name: String,
 }
 
-pub async fn create(req: Request<Body>) -> Result<Response<Body>, Infallible>  {
+pub async fn get(req: Request<Body>) -> Result<Response<Body>, Infallible> {
+    let mut db: String = "".to_string();
+    let mut table: String = "".to_string();
+
+    if let Some(path) = req.uri().query() {
+        for pair in path.split('&') {
+            let mut iter = pair.split('=');
+
+            if let Some(key) = iter.next() {
+                match key {
+                    "db" => if let Some(value) = iter.next() { db = value.to_string() },
+                    "table" => if let Some(value) = iter.next() { table = value.to_string() },
+                    _ => (),
+                }
+            }
+        }
+    } else {
+        return Ok(err_resp("can't find some keys in url 'db, table, key'"));
+    }
+
+    let status = get_table(&db, &table);
+
+    match status {
+        Ok(data) => {
+            let serialized = serde_json::to_string(&data).unwrap();
+            let response = Response::builder()
+                .header(CONTENT_TYPE, "application/json")
+                .body(Body::from(serialized)).unwrap();
+        
+            return Ok(response);
+        },
+        Err(err) => return Ok(err_resp(&err))
+    }
+
+    // if status {
+    //     Ok(ok_resp(&format!("Table with name \"{}\" has been deleted", table)))
+    // } else {
+    //     Ok(err_resp(&format!("Table with name \"{}\" has not been deleted", table)))
+    // }
+}
+
+pub async fn create(req: Request<Body>) -> Result<Response<Body>, Infallible> {
     let whole_body = hyper::body::to_bytes(req.into_body()).await.unwrap();
 
     let mut request_payload: CreateReq = CreateReq { 

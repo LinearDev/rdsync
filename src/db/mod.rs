@@ -73,6 +73,28 @@ pub fn create_db(name: &str) -> bool {
     return init_dir(&format!("{}/{}", db_path, name));
 }
 
+pub fn get_db(db: &str, name: &str) -> Result<Vec<String>, String> {
+    let db_path: &str = &config::CONFIG.db_path;
+
+    let data = fs::read_dir(format!("{}/{}/{}", db_path, db, name));
+
+    match data {
+        Ok(dir) => {
+            let rows: Vec<String> = dir
+            .filter_map(|entry| {
+                entry
+                    .ok()
+                    .and_then(|e| e.file_name().to_str().map(String::from))
+                    .map(|s| s[..s.len() - 3].to_string()) // Remove the last 3 characters
+            })
+            .collect();
+
+            Ok(rows)
+        },
+        Err(err) => return Err(err.to_string())
+    }
+}
+
 #[test]
 fn is_db_exist_test() {
     assert_eq!(is_db_exist("zaz"), false);

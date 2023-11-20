@@ -1,3 +1,4 @@
+use crate::db::row;
 use crate::http::{err_resp, ok_resp};
 use crate::cache;
 
@@ -11,6 +12,18 @@ struct AddReq {
     table: String,
     key: String,
     value: String
+}
+
+#[derive(Deserialize)]
+struct Bunch {
+    key: String,
+    value: String,
+}
+#[derive(Deserialize)]
+struct BunchReq {
+    db: String,
+    table: String,
+    bunch: Vec<Bunch>
 }
 
 pub async fn get(req: Request<Body>) -> Result<Response<Body>, Infallible> {
@@ -82,6 +95,36 @@ pub async fn add(req: Request<Body>) -> Result<Response<Body>, Infallible> {
         return Ok(ok_resp("new key was add"));
     } else {
         return Ok(err_resp(&format!("can't add new key - {}", &request_payload.key)));
+    }
+}
+
+pub async fn bunch(req: Request<Body>) -> Result<Response<Body>, Infallible> {
+    let whole_body = hyper::body::to_bytes(req.into_body()).await.unwrap();
+
+    let mut request_payload: BunchReq = BunchReq { 
+        db: "".to_string(),
+        table: "".to_string(),
+        bunch: Vec::new()
+    };
+    let mut parse_err: String = "".to_string();
+
+    match serde_json::from_slice(&whole_body) {
+        Ok(data) => {request_payload = data},
+        Err(err) => {parse_err = err.to_string()}
+    }
+
+    if parse_err.len() != 0 {
+        return Ok(err_resp(&parse_err));
+    }
+
+    // let status = request_payload.bunch.iter().all(|elem| cache::add(&request_payload.db, &request_payload.table, &elem.key, &elem.value));
+    let status = request_payload.bunch.iter().all(|elem| row::add_row(&request_payload.db, &request_payload.table, &elem.key, &elem.value));
+
+
+    if status {
+        return Ok(ok_resp("bunch was add"));
+    } else {
+        return Ok(err_resp(&format!("can't add bunch")));
     }
 }
 

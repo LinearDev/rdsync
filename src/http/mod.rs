@@ -60,9 +60,13 @@ async fn handle_request(req: Request<Body>) -> Result<Response<Body>, Infallible
             return row_methods::delete(req).await;
         }
 
-        // (&Method::GET, "/table") => {
-        //     return table_methods::get(req).await;
-        // }
+        (&Method::POST, "/bunch") => {
+            return row_methods::bunch(req).await;
+        }
+
+        (&Method::GET, "/table") => {
+            return table_methods::get(req).await;
+        }
 
         (&Method::POST, "/table") => {
             return table_methods::create(req).await;
@@ -103,6 +107,7 @@ async fn run() {
     });
 
     // Create a new server and bind it to an address
+    println!("HTTP server started at {}", config::CONFIG.port);
     let addr = SocketAddr::from(([0, 0, 0, 0], config::CONFIG.port));
     let server = Server::bind(&addr).serve(make_svc);
 

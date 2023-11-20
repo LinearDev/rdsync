@@ -1,5 +1,6 @@
 pub mod cache_table;
 
+use crate::config::CONFIG;
 use crate::db::{row, table};
 use crate::protos::row::Row;
 use crate::cache::cache_table::Cache;
@@ -17,35 +18,34 @@ struct CacheKey {
 
 // static mut CACHE: Cache = Cache::new();
 lazy_static! {
-    pub  static ref CACHE: Mutex<Cache> = Mutex::new(Cache::new(10));
+    pub  static ref CACHE: Mutex<Cache> = Mutex::new(Cache::new(CONFIG.cache_size.try_into().unwrap()));
 }
 
 /**
  * Add new row in cache table and in file db
  */
-pub fn add(db: &str, table: &str, key: &str, value: &str) -> bool {
+pub fn add(db: &str, table: &str, key: &str, value: &Vec<u8>) -> bool {
     let mut cache = CACHE.lock().unwrap();
-    let dat = cache.get(&to_cache_string(db, table, key));
+    let cache_key = to_cache_string(db, table, key).to_string();
 
-    if let Some(_r) = dat {
+    if cache.data.contains_key(&cache_key) {
         return false;
     }
     
-    let mut row = Row::new();
-    row.set_value(value.to_string());
-    let row_type = row::detect_str_type(value);
-    row.set_type(row_type.to_string());
+    // let mut row = Row::new();
+    // row.set_value(value);
+    // let row_type = row::detect_str_type(value);
+    // row.set_type(row_type.to_string());
 
-    let cache_key = to_cache_string(db, table, key).to_string();
-    cache.insert(cache_key.clone(), row.clone());
+    cache.data.entry(cache_key.clone()).or_insert(value.clone());
 
     //update time when updated
-    cache.safe_time_insert(&cache_key, TimeCache {
-        last_accessed: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(),
-        data_length: value.len()
-    });
+    // cache.safe_time_insert(&cache_key, TimeCache {
+    //     last_accessed: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(),
+    //     data_length: value.len()
+    // });
     
-    row::add_row(db, table, key, value);
+    // row::add_row(db, table, key, value);
 
     return true;
 }
@@ -53,26 +53,28 @@ pub fn add(db: &str, table: &str, key: &str, value: &str) -> bool {
 /**
  * Gets row from cache table
  */
-pub fn get(db: &str, table: &str, key: &str) -> Result<Row, String> {
+pub fn get(db: &str, table: &str, key: &str) -> Result<Vec<u8>, String> {
     let mut cache = CACHE.lock().unwrap();
     let data = cache.get(&to_cache_string(db, table, key));
 
     if let Some(r) = data {
-        return Ok(r.clone())
+        return Ok(r.clone());
     }
 
-    let row = row::read_row(db, table, key);
+    // let row = row::read_row(db, table, key);
 
-    match row {
-        Ok(r) => {
-            let cache_key = to_cache_string(db, table, key);
-            cache.insert(cache_key.clone(), r.clone());
-            cache.update_last_accessed(&cache_key);
+    // match row {
+    //     Ok(r) => {
+    //         let cache_key = to_cache_string(db, table, key);
+    //         // cache.insert(cache_key.clone(), r.clone());
+    //         cache.update_last_accessed(&cache_key);
 
-            return Ok(r)
-        },
-        Err(_) => return Err("[ ERROR ] Data not exist".to_string())
-    }
+    //         return Ok(r)
+    //     },
+    //     Err(_) => return Err("[ ERROR ] Data not exist".to_string())
+    // }
+    let test: Vec<u8> = Vec::new();
+    Ok(test)
 }
 
 /**

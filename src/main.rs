@@ -15,7 +15,8 @@ fn main() {
     config::read_config().expect("[ ERROR ] Main: Can not read config");
 
     if !db::init() {
-        print!("[ ERROR ] Main: Can not init DataBase")
+        print!("[ ERROR ] Main: Can not init DataBase");
+        return;
     };
 
     http::start();

@@ -1,7 +1,8 @@
 pub mod row_methods;
 pub mod table_methods;
+pub mod json;
 
-use std::{net::SocketAddr, thread};
+use std::net::SocketAddr;
 use hyper::{Body, Request, Response, Server, header::CONTENT_TYPE, service::{make_service_fn, service_fn}};
 use tungstenite::http::{Method, StatusCode};
 use std::convert::Infallible;
@@ -15,30 +16,10 @@ struct Res {
     message: String
 }
 
-pub fn err_resp (message: &str) -> Response<Body> {
-    let resp_id = Res {
-        status: false,
-        message: format!("ERROR: [http] {}", message)
-    };
-    let serialized = serde_json::to_string(&resp_id).unwrap();
-    let response = Response::builder()
-        .header(CONTENT_TYPE, "application/json")
-        .body(Body::from(serialized)).unwrap();
-
-    return response;
-}
-
-pub fn ok_resp (message: &str) -> Response<Body> {
-    let resp_id = Res {
-        status: true,
-        message: format!("LOG: [http] {}", message)
-    };
-    let serialized = serde_json::to_string(&resp_id).unwrap();
-    let response = Response::builder()
-        .header(CONTENT_TYPE, "application/json")
-        .body(Body::from(serialized)).unwrap();
-
-    return response;
+pub fn build_response(data: &str) -> Response<Body> {
+    Response::builder()
+        .body(Body::from(data.to_string()))
+        .unwrap()
 }
 
 async fn handle_request(req: Request<Body>) -> Result<Response<Body>, Infallible> {
@@ -49,7 +30,7 @@ async fn handle_request(req: Request<Body>) -> Result<Response<Body>, Infallible
         }
 
         (&Method::POST, "/row") => {
-            return row_methods::add(req).await;
+            row_methods::add(req).await
         }
 
         // (&Method::PUT, "/row") => {
@@ -96,12 +77,11 @@ async fn handle_request(req: Request<Body>) -> Result<Response<Body>, Infallible
     }
 }
 
-#[tokio::main]
-async fn run() {
+#[tokio::main(flavor = "multi_thread", worker_threads = 4)]
+pub async fn start() {
     // Create a new `Service` to handle incoming requests
     let make_svc = make_service_fn(|_conn| {
-        async {
-            // Return the handler function for each request
+        async move {
             Ok::<_, Infallible>(service_fn(handle_request))
         }
     });
@@ -112,12 +92,13 @@ async fn run() {
     let server = Server::bind(&addr).serve(make_svc);
 
     // Start the server and await its completion
-    if let Err(e) = server.await {
-        eprintln!("Server error: {}", e);
+    match server.await {
+        Ok(()) => (),
+        Err(e) => eprintln!("Server error: {}", e),
     }
 }
 
-pub fn start() {
-    run()
-    // thread::spawn(run);
-}
+// pub fn start() {
+//     run()
+//     // thread::spawn(run);
+// }

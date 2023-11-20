@@ -1,4 +1,4 @@
-use crate::{http::{err_resp, ok_resp}, db::table::{create_table, get_table}, cache::delete_table};
+use crate::{http::build_response, db::table::{create_table, get_table}, cache::delete_table};
 
 use std::convert::Infallible;
 use hyper::{Request, Body, Response, header::CONTENT_TYPE};
@@ -27,7 +27,7 @@ pub async fn get(req: Request<Body>) -> Result<Response<Body>, Infallible> {
             }
         }
     } else {
-        return Ok(err_resp("can't find some keys in url 'db, table, key'"));
+        return Ok(build_response("can't find some keys in url 'db, table, key'"));
     }
 
     let status = get_table(&db, &table);
@@ -41,7 +41,7 @@ pub async fn get(req: Request<Body>) -> Result<Response<Body>, Infallible> {
         
             return Ok(response);
         },
-        Err(err) => return Ok(err_resp(&err))
+        Err(err) => return Ok(build_response(&err))
     }
 
     // if status {
@@ -66,15 +66,15 @@ pub async fn create(req: Request<Body>) -> Result<Response<Body>, Infallible> {
     }
 
     if parse_err.len() != 0 {
-        return Ok(err_resp(&parse_err));
+        return Ok(build_response(&parse_err));
     }
 
     let status = create_table(&request_payload.db, &request_payload.name);
 
     if status {
-        Ok(ok_resp(&format!("Table with name \"{}\" has been created", request_payload.name)))
+        Ok(build_response("1"))
     } else {
-        Ok(err_resp(&format!("Table with name \"{}\" has not been created", request_payload.name)))
+        Ok(build_response("0"))
     }
 }
 
@@ -95,14 +95,14 @@ pub async fn delete(req: Request<Body>) -> Result<Response<Body>, Infallible>  {
             }
         }
     } else {
-        return Ok(err_resp("can't find some keys in url 'db, table, key'"));
+        return Ok(build_response("can't find some keys in url 'db, table, key'"));
     }
 
     let status = delete_table(&db, &table);
 
     if status {
-        Ok(ok_resp(&format!("Table with name \"{}\" has been deleted", table)))
+        Ok(build_response("1"))
     } else {
-        Ok(err_resp(&format!("Table with name \"{}\" has not been deleted", table)))
+        Ok(build_response("0"))
     }
 }

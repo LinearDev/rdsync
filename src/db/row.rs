@@ -34,24 +34,22 @@ pub fn add_row(db: &str, table: &str, key: &str, value: &str) -> bool {
         .append(true)
         .create(true)
         .read(true)
-        .open(file_path)
+        .open(&file_path)
         .expect(&format!("[ ERROR ]: Can't open key - {}", key));
 
     let mut proto: Row = Row::new();
     proto.set_value(value.to_string());
     proto.set_type(detect_str_type(value).to_string());
 
-    let res = proto.write_to_writer(&mut file);
-
-    match res {
+    match proto.write_to_writer(&mut file) {
         Ok(_) => {
             println!("[ INFO ]: Imported new key - {}", key);
-            return true;
-        },
+            true
+        }
         Err(error) => {
             println!("[ ERROR ] Row: Can't add new key - {}. Reason:  {}", key, error);
-            return  false;
-        },
+            false
+        }
     }
 }
 

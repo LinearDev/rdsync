@@ -27,7 +27,7 @@ pub fn is_valid_data(data: &str, data_type: &str) -> Result<(), String> {
             Err(err) => Err(err.to_string())
         },
         "bool" => {
-            if (data == "1" || data == "0" || data.to_lowercase() == "false" || data.to_lowercase() == "true") {
+            if data == "1" || data == "0" || data.to_lowercase() == "false" || data.to_lowercase() == "true" {
                 return Ok(())
             } else {
                 return  Err("not a boolean value".to_string());

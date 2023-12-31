@@ -6,7 +6,7 @@ pub fn handle_request(path: &str, head: &RequestHeaders, body: &str) -> Result<S
     match path {
         // Handle "/row" path
         "get_row" => {
-            return row_methods::get(head, &body);
+            return row_methods::get(head);
         }
 
         "add_row" => {

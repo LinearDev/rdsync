@@ -7,7 +7,7 @@ use std::{net::{TcpListener, TcpStream}, thread, sync::{Mutex, MutexGuard}, coll
 use lazy_static::lazy_static;
 use uuid::Uuid;
 
-use crate::tx_pool::add_tx;
+use crate::{tx_pool::add_tx, config::CONFIG};
 use receiver::RequestHeaders;
 
 pub struct Clients {
@@ -62,7 +62,9 @@ fn handle_client(stream: TcpStream) {
 }
 
 pub fn start() {
-    let listener: TcpListener = TcpListener::bind("127.0.0.1:3000").unwrap();
+    let config_ip = CONFIG.ip.clone();
+    let config_port = CONFIG.port.to_string();
+    let listener: TcpListener = TcpListener::bind(format!("{}:{}", config_ip, config_port)).unwrap();
     
     for stream in listener.incoming() {
         let stream: TcpStream = stream.unwrap();

@@ -1,0 +1,14 @@
+version: '3.2'
+
+services:
+  api:
+    container_name: "db-service"
+    image: "db-service"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ["./target/release/rust-database"]
+    ports:
+      - 845:3000
+    volumes:
+      - ./db:/app/db/db

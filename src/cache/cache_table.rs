@@ -57,7 +57,6 @@ impl Cache {
             self.time_data.insert(key.to_string(), time_h);
         } else {
             expand_cache(self);
-            // Now you can insert the new data
             self.time_data.insert(key.to_string(), time_h);
         }
     }

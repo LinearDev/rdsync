@@ -1,118 +1,74 @@
 pub mod row_methods;
 pub mod table_methods;
+pub mod db_methods;
+pub mod receiver;
 
-use std::{net::SocketAddr, thread};
-use hyper::{Body, Request, Response, Server, header::CONTENT_TYPE, service::{make_service_fn, service_fn}};
-use tungstenite::http::{Method, StatusCode};
-use std::convert::Infallible;
-use serde::Serialize;
+use std::{net::{TcpListener, TcpStream}, thread, sync::{Mutex, MutexGuard}, collections::HashMap, io::Write};
+use lazy_static::lazy_static;
+use uuid::Uuid;
 
-use crate::config;
+use crate::tx_pool::add_tx;
+use receiver::RequestHeaders;
 
-#[derive(Serialize)]
-struct Res {
-    status: bool,
-    message: String
+pub struct Clients {
+    pub writeble: HashMap<String, TcpStream>
 }
 
-pub fn err_resp (message: &str) -> Response<Body> {
-    let resp_id = Res {
-        status: false,
-        message: format!("ERROR: [http] {}", message)
-    };
-    let serialized = serde_json::to_string(&resp_id).unwrap();
-    let response = Response::builder()
-        .header(CONTENT_TYPE, "application/json")
-        .body(Body::from(serialized)).unwrap();
-
-    return response;
-}
-
-pub fn ok_resp (message: &str) -> Response<Body> {
-    let resp_id = Res {
-        status: true,
-        message: format!("LOG: [http] {}", message)
-    };
-    let serialized = serde_json::to_string(&resp_id).unwrap();
-    let response = Response::builder()
-        .header(CONTENT_TYPE, "application/json")
-        .body(Body::from(serialized)).unwrap();
-
-    return response;
-}
-
-async fn handle_request(req: Request<Body>) -> Result<Response<Body>, Infallible> {
-    match (req.method(), req.uri().path()) {
-        // Handle "/row" path
-        (&Method::GET, "/row") => {
-            return row_methods::get(req).await;
-        }
-
-        (&Method::POST, "/row") => {
-            return row_methods::add(req).await;
-        }
-
-        // (&Method::PUT, "/row") => {
-        //     return methods::edit(req);
-        // }
-
-        (&Method::DELETE, "/row") => {
-            return row_methods::delete(req).await;
-        }
-
-        // (&Method::GET, "/table") => {
-        //     return table_methods::get(req).await;
-        // }
-
-        (&Method::POST, "/table") => {
-            return table_methods::create(req).await;
-        }
-
-        (&Method::DELETE, "/table") => {
-            return table_methods::delete(req).await;
-        }
-
-        // (&Method::POST, "/db") => {
-        //     return methods::delete(req);
-        // }
-
-        // (&Method::DELETE, "/db") => {
-        //     return methods::delete(req);
-        // }
-
-        // Handle all other paths
-        _ => {
-            // Return a 404 Not Found response for unrecognized paths
-            let response = Response::builder()
-                .status(StatusCode::NOT_FOUND)
-                .body(Body::empty())
-                .unwrap();
-            Ok(response)
+impl Clients {
+    pub fn new() -> Self {
+        Self{
+            writeble: HashMap::new()
         }
     }
 }
 
-#[tokio::main]
-async fn run() {
-    // Create a new `Service` to handle incoming requests
-    let make_svc = make_service_fn(|_conn| {
-        async {
-            // Return the handler function for each request
-            Ok::<_, Infallible>(service_fn(handle_request))
+lazy_static! {
+    pub static ref CLIENTS: Mutex<Clients> = Mutex::new(Clients::new());
+}
+
+fn add_stream(stream: TcpStream) -> String {
+    let mut cl: MutexGuard<'_, Clients> = CLIENTS.lock().unwrap();
+    let address: Uuid = Uuid::new_v4();
+    cl.writeble.insert(address.to_string(), stream.try_clone().unwrap());
+    return address.to_string();
+}
+
+pub fn send(rud: &str, data: &str, to: &str) {
+    let cl: MutexGuard<'_, Clients> = CLIENTS.lock().unwrap();
+
+    let mut client: &TcpStream = cl.writeble.get(to).unwrap();
+    client.write(format!("rud: {}\n{}", rud, data).as_bytes()).unwrap();
+
+    return;
+}
+
+fn handle_client(stream: TcpStream) {
+    let address: String = add_stream(stream.try_clone().unwrap());
+    loop {
+        let req: (String, String);
+        match receiver::deserialize(stream.try_clone().as_mut().unwrap(), &address) {
+            Ok(data) => {req = data},
+            Err(a) => {
+                let mut c: MutexGuard<'_, Clients> = CLIENTS.lock().unwrap();
+                c.writeble.remove(&a);
+                break;
+            }
         }
-    });
 
-    // Create a new server and bind it to an address
-    let addr = SocketAddr::from(([0, 0, 0, 0], config::CONFIG.port));
-    let server = Server::bind(&addr).serve(make_svc);
+        let head: (String, RequestHeaders) = receiver::get_header(req.0);
 
-    // Start the server and await its completion
-    if let Err(e) = server.await {
-        eprintln!("Server error: {}", e);
+        add_tx(&head.0, head.1, &req.1, &address);
     }
 }
 
 pub fn start() {
-    run()
-    // thread::spawn(run);
+    let listener: TcpListener = TcpListener::bind("127.0.0.1:3000").unwrap();
+    
+    for stream in listener.incoming() {
+        let stream: TcpStream = stream.unwrap();
+        
+        thread::spawn(|| {
+            handle_client(stream)
+        });
+    }
 }

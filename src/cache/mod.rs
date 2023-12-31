@@ -1,11 +1,13 @@
 pub mod cache_table;
+pub mod cache_db;
 
+use std::{sync::{Mutex, MutexGuard}, time::{SystemTime, UNIX_EPOCH}};
+use lazy_static::lazy_static;
+
+use crate::config::CONFIG;
 use crate::db::{row, table};
 use crate::protos::row::Row;
 use crate::cache::cache_table::Cache;
-
-use std::{sync::Mutex, time::{SystemTime, UNIX_EPOCH}};
-use lazy_static::lazy_static;
 
 use self::cache_table::TimeCache;
 
@@ -17,27 +19,25 @@ struct CacheKey {
 
 // static mut CACHE: Cache = Cache::new();
 lazy_static! {
-    pub  static ref CACHE: Mutex<Cache> = Mutex::new(Cache::new(10));
+    pub  static ref CACHE: Mutex<Cache> = Mutex::new(Cache::new(CONFIG.cache_size.try_into().unwrap()));
 }
 
 /**
  * Add new row in cache table and in file db
  */
-pub fn add(db: &str, table: &str, key: &str, value: &str) -> bool {
-    let mut cache = CACHE.lock().unwrap();
-    let dat = cache.get(&to_cache_string(db, table, key));
+pub fn add(db: &str, table: &str, key: &str, value: &str, _type: &str) -> bool {
+    let mut cache: MutexGuard<'_, Cache> = CACHE.lock().unwrap();
+    let cache_key: String = to_cache_string(db, table, key).to_string();
 
-    if let Some(_r) = dat {
+    if cache.data.contains_key(&cache_key) {
         return false;
     }
     
-    let mut row = Row::new();
+    let mut row: Row = Row::new();
     row.set_value(value.to_string());
-    let row_type = row::detect_str_type(value);
-    row.set_type(row_type.to_string());
+    row.set_type(_type.to_string());
 
-    let cache_key = to_cache_string(db, table, key).to_string();
-    cache.insert(cache_key.clone(), row.clone());
+    cache.data.entry(cache_key.clone()).or_insert(row.clone());
 
     //update time when updated
     cache.safe_time_insert(&cache_key, TimeCache {
@@ -45,7 +45,7 @@ pub fn add(db: &str, table: &str, key: &str, value: &str) -> bool {
         data_length: value.len()
     });
     
-    row::add_row(db, table, key, value);
+    row::add_row(db, table, key, &mut row);
 
     return true;
 }
@@ -54,24 +54,23 @@ pub fn add(db: &str, table: &str, key: &str, value: &str) -> bool {
  * Gets row from cache table
  */
 pub fn get(db: &str, table: &str, key: &str) -> Result<Row, String> {
-    let mut cache = CACHE.lock().unwrap();
-    let data = cache.get(&to_cache_string(db, table, key));
+    let mut cache: MutexGuard<'_, Cache> = CACHE.lock().unwrap();
+    let data: Option<&Row> = cache.get(&to_cache_string(db, table, key));
 
     if let Some(r) = data {
-        return Ok(r.clone())
+        return Ok(r.clone());
     }
 
-    let row = row::read_row(db, table, key);
+    let row: Result<Row, String> = row::read_row(db, table, key);
 
     match row {
         Ok(r) => {
-            let cache_key = to_cache_string(db, table, key);
-            cache.insert(cache_key.clone(), r.clone());
+            let cache_key: String = to_cache_string(db, table, key);
             cache.update_last_accessed(&cache_key);
 
-            return Ok(r)
+            return Ok(r);
         },
-        Err(_) => return Err("[ ERROR ] Data not exist".to_string())
+        Err(_) => return Err("0".to_string())
     }
 }
 
@@ -79,13 +78,13 @@ pub fn get(db: &str, table: &str, key: &str) -> Result<Row, String> {
  * Deletes row from cache and from file db
  */
 pub fn delete(db: &str, table: &str, key: &str) -> Result<String, String> {
-    let mut cache = CACHE.lock().unwrap();
-    let cache_key = to_cache_string(db, table, key);
+    let mut cache: MutexGuard<'_, Cache> = CACHE.lock().unwrap();
+    let cache_key: String = to_cache_string(db, table, key);
     
     cache.data.remove(&cache_key);
     cache.time_data.remove(&cache_key);
 
-    let status = row::delete_row(db, table, key);
+    let status: bool = row::delete_row(db, table, key);
     if status {
         return Ok(format!("Row with key {} was deleted", key.to_string()));
     } else {
@@ -106,10 +105,10 @@ fn to_cache_string(db: &str, table: &str, key: &str) -> String {
 }
 
 fn from_cache_string(cache_string: String) -> CacheKey {
-    let mut key = CacheKey {
-        db: "".to_string(),
-        table: "".to_string(),
-        key: "".to_string(),
+    let mut key: CacheKey = CacheKey {
+        db: String::new(),
+        table: String::new(),
+        key: String::new(),
     };
 
     let cs_split: Vec<&str> = cache_string.split("|rdb|").collect();
@@ -122,14 +121,13 @@ fn from_cache_string(cache_string: String) -> CacheKey {
 }
 
 pub fn delete_table(db: &str, name: &str) -> bool {
-    let status = table::delete_table(db, name);
+    let status: bool = table::delete_table(db, name);
     if !status {
         return false;
     }
 
-    let mut cache = CACHE.lock().unwrap();
-    let keys_to_delete: Vec<String> = cache
-        .time_data
+    let mut cache: MutexGuard<'_, Cache> = CACHE.lock().unwrap();
+    let keys_to_delete: Vec<String> = cache.time_data
         .keys()
         .filter(|key| {
             let data = from_cache_string(key.to_string());

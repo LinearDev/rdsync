@@ -8,7 +8,7 @@ pub struct TimeCache {
 }
 
 pub struct Cache {
-    pub data: HashMap<String, Vec<u8>>,
+    pub data: HashMap<String, Row>,
     pub time_data: HashMap<String, TimeCache>,
     pub max_data_size: usize,
     pub current_data_size: usize,
@@ -28,11 +28,11 @@ impl Cache {
         }
     }
 
-    pub fn get(&self, key: &str) -> Option<&Vec<u8>> {
+    pub fn get(&self, key: &str) -> Option<&Row> {
         self.data.get(key)
     }
 
-    pub fn insert(&mut self, key: String, event: Vec<u8>) {
+    pub fn insert(&mut self, key: String, event: Row) {
         self.data.insert(key, event);
     }
 
@@ -57,7 +57,6 @@ impl Cache {
             self.time_data.insert(key.to_string(), time_h);
         } else {
             expand_cache(self);
-            // Now you can insert the new data
             self.time_data.insert(key.to_string(), time_h);
         }
     }

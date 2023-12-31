@@ -1,108 +1,53 @@
-use crate::{http::build_response, db::table::{create_table, get_table}, cache::delete_table};
+use crate::{db::table::{create_table, get_table, get_table_with_keys}, cache::delete_table};
 
-use std::convert::Infallible;
-use hyper::{Request, Body, Response, header::CONTENT_TYPE};
-use serde::Deserialize;
+use super::{row_methods::Bunch, receiver};
 
-#[derive(Deserialize)]
-struct CreateReq {
-    db: String,
-    name: String,
-}
-
-pub async fn get(req: Request<Body>) -> Result<Response<Body>, Infallible> {
-    let mut db: String = "".to_string();
-    let mut table: String = "".to_string();
-
-    if let Some(path) = req.uri().query() {
-        for pair in path.split('&') {
-            let mut iter = pair.split('=');
-
-            if let Some(key) = iter.next() {
-                match key {
-                    "db" => if let Some(value) = iter.next() { db = value.to_string() },
-                    "table" => if let Some(value) = iter.next() { table = value.to_string() },
-                    _ => (),
-                }
-            }
-        }
-    } else {
-        return Ok(build_response("can't find some keys in url 'db, table, key'"));
-    }
-
-    let status = get_table(&db, &table);
+pub fn get(req: &receiver::RequestHeaders) -> Result<String, String> {
+    let status: Result<Vec<String>, String> = get_table(&req.db, &req.table);
 
     match status {
-        Ok(data) => {
-            let serialized = serde_json::to_string(&data).unwrap();
-            let response = Response::builder()
-                .header(CONTENT_TYPE, "application/json")
-                .body(Body::from(serialized)).unwrap();
+        Ok(mut data) => {
+            let s: String = simd_json::to_string(&mut data).unwrap();
         
-            return Ok(response);
+            return Ok(s + "\njson");
         },
-        Err(err) => return Ok(build_response(&err))
-    }
-
-    // if status {
-    //     Ok(ok_resp(&format!("Table with name \"{}\" has been deleted", table)))
-    // } else {
-    //     Ok(err_resp(&format!("Table with name \"{}\" has not been deleted", table)))
-    // }
-}
-
-pub async fn create(req: Request<Body>) -> Result<Response<Body>, Infallible> {
-    let whole_body = hyper::body::to_bytes(req.into_body()).await.unwrap();
-
-    let mut request_payload: CreateReq = CreateReq { 
-        db: "".to_string(),
-        name: "".to_string(),
-    };
-    let mut parse_err: String = "".to_string();
-
-    match serde_json::from_slice(&whole_body) {
-        Ok(data) => {request_payload = data},
-        Err(err) => {parse_err = err.to_string()}
-    }
-
-    if parse_err.len() != 0 {
-        return Ok(build_response(&parse_err));
-    }
-
-    let status = create_table(&request_payload.db, &request_payload.name);
-
-    if status {
-        Ok(build_response("1"))
-    } else {
-        Ok(build_response("0"))
-    }
-}
-
-pub async fn delete(req: Request<Body>) -> Result<Response<Body>, Infallible>  {
-    let mut db: String = "".to_string();
-    let mut table: String = "".to_string();
-
-    if let Some(path) = req.uri().query() {
-        for pair in path.split('&') {
-            let mut iter = pair.split('=');
-
-            if let Some(key) = iter.next() {
-                match key {
-                    "db" => if let Some(value) = iter.next() { db = value.to_string() },
-                    "table" => if let Some(value) = iter.next() { table = value.to_string() },
-                    _ => (),
-                }
-            }
+        Err(err) => {      
+            return Ok(err);
         }
-    } else {
-        return Ok(build_response("can't find some keys in url 'db, table, key'"));
     }
+}
 
-    let status = delete_table(&db, &table);
+pub fn get_with_keys(req: &receiver::RequestHeaders) -> Result<String, String> {
+    let status: Result<Vec<Bunch>, String> = get_table_with_keys(&req.db, &req.table);
+
+    match status {
+        Ok(mut data) => {
+            let s: String = simd_json::to_string(&mut data).unwrap();
+        
+            return Ok(s + "\njson");
+        },
+        Err(err) => {        
+            return Ok(err);
+        }
+    }
+}
+
+pub fn create(req: &receiver::RequestHeaders) -> Result<String, String> {
+    let status = create_table(&req.db, &req.table);
 
     if status {
-        Ok(build_response("1"))
+        Ok("1".to_string())
     } else {
-        Ok(build_response("0"))
+        Ok("0".to_string())
+    }
+}
+
+pub fn delete(req: &receiver::RequestHeaders) -> Result<String, String>  {
+    let status = delete_table(&req.db, &req.table);
+
+    if status {
+        Ok("1".to_string())
+    } else {
+        Ok("0".to_string())
     }
 }

@@ -1,16 +1,18 @@
 pub mod table;
 pub mod row;
+pub mod db;
+
+use std::{fs::{self, ReadDir}, io::Error, path::Path};
 
 use crate::config;
-use std::{fs, path::Path};
 
 /**
  * Initialize directory on patch
  */
 fn init_dir(path: &str) -> bool {
-    let dir = Path::new(&path);
+    let dir: &Path = Path::new(&path);
     if !dir.exists() {
-        let result = fs::create_dir(path);
+        let result: Result<(), Error> = fs::create_dir(path);
         match result {
             Ok(_) => {
                 println!("[ INFO ] DB: dir created");
@@ -37,8 +39,8 @@ fn is_dir_exist_test() {
 fn is_dir_exist(path: &str) -> bool {
     let db_path: &str = &config::CONFIG.db_path;
 
-    let format_path = format!("{}/{}", db_path, path);
-    let dir = Path::new(&format_path);
+    let format_path: String = format!("{}/{}", db_path, path);
+    let dir: &Path = Path::new(&format_path);
     return dir.exists();
 }
 
@@ -76,7 +78,7 @@ pub fn create_db(name: &str) -> bool {
 pub fn get_db(db: &str, name: &str) -> Result<Vec<String>, String> {
     let db_path: &str = &config::CONFIG.db_path;
 
-    let data = fs::read_dir(format!("{}/{}/{}", db_path, db, name));
+    let data: Result<ReadDir, Error> = fs::read_dir(format!("{}/{}/{}", db_path, db, name));
 
     match data {
         Ok(dir) => {

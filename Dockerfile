@@ -4,7 +4,8 @@ WORKDIR /app/db
 
 VOLUME [ "/db" ]
 
-COPY . .
+COPY ./db ./db
+COPY config.toml config.toml
 
 RUN cargo build --release
 

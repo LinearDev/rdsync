@@ -62,9 +62,21 @@ fn handle_client(stream: TcpStream) {
 }
 
 pub fn start() {
-    let config_ip = CONFIG.ip.clone();
-    let config_port = CONFIG.port.to_string();
-    let listener: TcpListener = TcpListener::bind(format!("{}:{}", config_ip, config_port)).unwrap();
+    let config_ip: String = CONFIG.ip.clone();
+    let config_port: String = CONFIG.port.to_string();
+    let listener: TcpListener;
+    
+    match TcpListener::bind(format!("{}:{}", config_ip, config_port)) {
+        Ok(ls) => {
+            listener = ls;
+            println!("[ LOG ] `async tx pipeline` listens - {}:{}", config_ip, config_port)
+        },
+        Err(err) => {
+            println!("[ ERROR ] `async tx pipeline` not started");
+            println!("{:?}", err);
+            return;
+        }
+    }
     
     for stream in listener.incoming() {
         let stream: TcpStream = stream.unwrap();

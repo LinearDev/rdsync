@@ -57,8 +57,11 @@ fn worker() {
 }
 
 pub fn start() {
-    for _ in 0..CONFIG.workers_count {
+    println!("[ LOG ] Starting `workers`");
+    for id in 0..CONFIG.workers_count {
+        println!("[ DEBUG ] Start worker with id - {}", id);
         thread::spawn(worker);
         sleep(time::Duration::from_millis((CONFIG.workers_count * 2).into()));
     }
+    println!("[ LOG ] All workers are started")
 }

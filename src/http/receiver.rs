@@ -1,16 +1,54 @@
+//! Module for deserializing TCP stream data.
+
 use std::{net::TcpStream, io::Read};
 
+/// Number of sections expected in the transmission.
 const SECTIONS_IN_TX: i32 = 2;
 
+/// Represents the headers of a request.
 #[derive(Debug, Clone)]
 pub struct RequestHeaders {
+    /// Request flag.
     pub rud: String,
+
+    /// Database name.
     pub db: String,
+
+    /// Table name.
     pub table: String,
+
+    /// Record key.
     pub key: String,
+
+    /// Type of value data.
     pub _type: String
 }
 
+/// Parses a header string into a request type and [`RequestHeaders`].
+///
+/// # Arguments
+///
+/// * `header` - String containing the serialized request header
+///
+/// # Returns
+///
+/// Tuple containing:
+///
+/// - Request type string
+/// - Populated [`RequestHeaders`] struct
+///
+/// # Examples
+///
+/// ```rust
+/// let header_str = `
+///     req: get_row
+///     rud: ADSDFS4245ASDF8779T8ASDT
+///     db: users
+///     table: accounts
+///     key: 0
+/// `;
+/// let (req_type, headers) = get_header(header_str);
+/// ```
 pub fn get_header(header: String) -> (String, RequestHeaders) {
     let mut req_type: String = String::new();
     let mut req_struct: RequestHeaders = RequestHeaders{
@@ -39,18 +77,47 @@ pub fn get_header(header: String) -> (String, RequestHeaders) {
     return (req_type, req_struct);
 }
 
+/// Deserializes a [`TcpStream`] into header and body string sections.
+///
+/// Reads bytes from the stream and separates into header and body sections,
+/// returning each section as a separate string.
+///
+/// Uses flags and counter to track current section. Each section starts
+/// with a 0x1 or 0x2 byte and ends with a 0x17 byte.
+///
+/// # Arguments
+///
+/// * `stream` - Mutable reference to the [`TcpStream`] to read from
+/// * `address` - String representing the client address
+///
+/// # Returns
+///
+/// [`Result`] containing:
+///
+/// - Ok variant: Tuple with header and body [`String`]s
+/// - Err variant: Client [`address`] string on read error
+///
+/// # Examples
+///
+/// ```no_run
+/// use std::net::TcpStream;
+///
+/// let stream = TcpStream::connect("127.0.0.1:34254")?;
+/// let addr = stream.peer_addr()?;
+/// let (header, body) = deserialize(&mut stream, &addr)?;
+/// ```
 pub fn deserialize(mut stream: &TcpStream, address: &str) -> Result<(String, String), String> {
     let mut is_header_section: bool = false;
     let mut is_body_section: bool = false;
-    let mut section_number = 0;
+    let mut section_number: i32 = 0;
 
-    let mut header_buf = Vec::<u8>::with_capacity(512);
-    let mut body_buf = Vec::<u8>::with_capacity(512);
+    let mut header_buf: Vec<u8> = Vec::<u8>::with_capacity(512);
+    let mut body_buf: Vec<u8> = Vec::<u8>::with_capacity(512);
     loop {
         if section_number == SECTIONS_IN_TX {
             break;
         }
-        let mut temp_buf = [0; 1];
+        let mut temp_buf: [u8; 1] = [0; 1];
         let bytes_read: usize;
         match stream.read(&mut temp_buf) {
             Ok(size) => {bytes_read = size}
@@ -89,15 +156,3 @@ pub fn deserialize(mut stream: &TcpStream, address: &str) -> Result<(String, Str
 
     Ok((head_str, body_str))
 }
-
-// [1, - start header section
-// 114, 101, 113, 58, 32, 97, 100, 100, 95, 114, 111, 119, 10,
-// 114, 117, 100, 58, 32, 48, 49, 72, 74, 83, 69, 90, 72, 56, 49, 55, 74, 74, 71, 83, 53, 70, 53, 77, 72, 68, 83, 54, 77, 74, 87, 10,
-// 100, 98, 58, 32, 116, 101, 115, 116, 95, 100, 98, 10,
-// 116, 97, 98, 108, 101, 58, 32, 116, 101, 115, 116, 95, 116, 97, 98, 108, 101, 95, 106, 115, 111, 110, 10,
-// 107, 101, 121, 58, 32, 49, 10,
-// 116, 121, 112, 101, 58, 32, 106, 115, 111, 110, 10,
-// 23, - end header section
-// 2, - start body section
-// 123, 34, 107, 101, 121, 34, 58, 34, 75, 70, 121, 116, 107, 66, 97, 66, 78, 100, 111, 117, 71, 75, 102, 67, 98, 118, 90, 78, 113, 111, 75, 106, 34, 44, 34, 118, 97, 108, 117, 101, 34, 58, 123, 34, 105, 100, 34, 58, 34, 75, 70, 121, 116, 107, 66, 97, 66, 78, 100, 111, 117, 71, 75, 102, 67, 98, 118, 90, 78, 113, 111, 75, 106, 34, 44, 34, 101, 109, 97, 105, 108, 34, 58, 34, 74, 97, 107, 79, 115, 78, 69, 119, 95, 89, 67, 121, 114, 121, 84, 64, 121, 97, 104, 111, 111, 46, 99, 111, 109, 34, 44, 34, 114, 111, 108, 101, 115, 34, 58, 91, 34, 103, 117, 101, 115, 116, 34, 44, 34, 97, 100, 109, 105, 110, 34, 44, 34, 109, 101, 109, 98, 101, 114, 34, 93, 44, 34, 97, 112, 105, 75, 101, 121, 34, 58, 34, 53, 55, 100, 50, 97, 102, 102, 101, 45, 56, 101, 100, 98, 45, 52, 98, 56, 102, 45, 98, 57, 54, 52, 45, 99, 53, 99, 56, 49, 99, 48, 53, 56, 50, 55, 54, 34, 44, 34, 112, 114, 111, 102, 105, 108, 101, 34, 58, 123, 34, 100, 111, 98, 34, 58, 34, 49, 57, 57, 56, 45, 48, 55, 45, 50, 53, 34, 44, 34, 110, 97, 109, 101, 34, 58, 34, 84, 86, 107, 100, 102, 77, 67, 74, 32, 86, 76, 68, 77, 83, 89, 34, 44, 34, 97, 98, 111, 117, 116, 34, 58, 34, 109, 103, 71, 81, 106, 89, 108, 107, 103, 75, 81, 69, 107, 73, 111, 107, 88, 107, 90, 68, 100, 117, 90, 71, 120, 89, 84, 116, 112, 106, 118, 82, 82, 67, 65, 118, 116, 119, 87, 99, 105, 90, 66, 74, 113, 117, 71, 89, 121, 69, 34, 44, 34, 97, 100, 100, 114, 101, 115, 115, 34, 58, 34, 81, 106, 65, 89, 103, 110, 72, 90, 69, 102, 44, 32, 117, 80, 113, 114, 86, 101, 116, 65, 122, 72, 44, 32, 119, 110, 115, 98, 97, 72, 73, 88, 109, 117, 34, 44, 34, 99, 111, 109, 112, 97, 110, 121, 34, 58, 34, 79, 103, 67, 97, 107, 110, 110, 68, 34, 44, 34, 108, 111, 99, 97, 116, 105, 111, 110, 34, 58, 123, 34, 108, 97, 116, 34, 58, 50, 50, 46, 53, 48, 54, 53, 57, 49, 44, 34, 108, 111, 110, 103, 34, 58, 49, 49, 46, 52, 53, 50, 53, 50, 57, 125, 125, 44, 34, 117, 115, 101, 114, 110, 97, 109, 101, 34, 58, 34, 100, 79, 89, 115, 68, 110, 85, 114, 34, 44, 34, 99, 114, 101, 97, 116, 101, 100, 65, 116, 34, 58, 34, 50, 48, 50, 51, 45, 49, 49, 45, 50, 49, 84, 48, 49, 58, 51, 54, 58, 48, 52, 46, 50, 50, 52, 56, 55, 50, 90, 34, 44, 34, 117, 112, 100, 97, 116, 101, 100, 65, 116, 34, 58, 34, 50, 48, 50, 51, 45, 49, 49, 45, 50, 50, 84, 48, 49, 58, 51, 54, 58, 48, 52, 46, 50, 50, 52, 56, 55, 51, 90, 34, 125, 125,
-// 23] - end body section

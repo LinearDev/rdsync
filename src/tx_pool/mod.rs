@@ -9,9 +9,18 @@ use crate::{http::{self, receiver::RequestHeaders}, config::CONFIG};
 use tx_table::{TxPool, TX};
 
 lazy_static! {
+    /// A global Mutex-protected singleton instance of `TxPool` for managing transactions.
     pub static ref POOL: Mutex<TxPool> = Mutex::new(TxPool::new());
 }
 
+/// Adds a new transaction to the transaction pool.
+///
+/// # Arguments
+///
+/// * `req` - The request type.
+/// * `head` - The request headers.
+/// * `body` - The request body.
+/// * `to` - The destination address for the transaction.
 pub fn add_tx(req: &str, head: RequestHeaders, body: &str, to: &str) {
     let tx: TX = TX{
         req: req.to_string(),
@@ -26,11 +35,13 @@ pub fn add_tx(req: &str, head: RequestHeaders, body: &str, to: &str) {
     return;
 }
 
+/// Sleeps the current thread for one second.
 fn wsleep() {
     sleep(time::Duration::from_secs(1));
     return;
 }
 
+/// Worker function that processes transactions from the transaction pool.
 fn worker() {
     loop {
         if worker::is_pool_empty() {
@@ -56,6 +67,7 @@ fn worker() {
     }
 }
 
+/// Starts the worker threads for processing transactions.
 pub fn start() {
     println!("[ LOG ] Starting `workers`");
     for id in 0..CONFIG.workers_count {

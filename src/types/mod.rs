@@ -1,5 +1,4 @@
-pub mod strings;
-
+/// Array of valid data types.
 pub static TYPES: [&str; 8] = [
     "string",
     "int",
@@ -11,6 +10,16 @@ pub static TYPES: [&str; 8] = [
     "json"
 ];
 
+/// Checks if the provided data is valid for a given data type.
+///
+/// # Arguments
+///
+/// * `data` - The data to be validated.
+/// * `data_type` - The expected data type.
+///
+/// # Returns
+///
+/// * `Ok(())` if the data is valid for the specified type, otherwise `Err` with a descriptive error message.
 pub fn is_valid_data(data: &str, data_type: &str) -> Result<(), String> {
     match data_type {
         "string" => Ok(()),

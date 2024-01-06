@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["add_row","Adds a new row to a specified database table."],["delete_row","Deletes a specified row from a database table."],["is_row_exist","Checks if a specified row exists in a database table."],["read_row","Reads the data of a specified row from a database table."]]};

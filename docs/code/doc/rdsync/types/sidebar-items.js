@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["is_valid_data","Checks if the provided data is valid for a given data type."]],"static":[["TYPES","Array of valid data types."]]};

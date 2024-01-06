@@ -1,18 +1,20 @@
 use std::{fs::{self, remove_file, OpenOptions, File}, io::{self, Read}};
 use protobuf::{Message, Error };
-use serde_json::Value;
 
 use crate::{db::{self, table}, protos::row::Row, config};
 
-pub fn detect_str_type(input: &str) -> &str {
-    match serde_json::from_str::<Value>(input) {
-        Ok(_) => "json",
-        Err(_) => "string",
-    }
-}
-/**
- * Add new row in table
- */
+/// Adds a new row to a specified database table.
+///
+/// # Arguments
+///
+/// * `db` - Database name.
+/// * `table` - Table name.
+/// * `key` - Key for the new row.
+/// * `row` - Reference to the row data to be added.
+///
+/// # Returns
+///
+/// Returns true if the addition is successful; false otherwise.
 pub fn add_row(db: &str, table: &str, key: &str, row: &mut Row) -> bool {
     let db_path: &str = &config::CONFIG.db_path;
 
@@ -45,9 +47,17 @@ pub fn add_row(db: &str, table: &str, key: &str, row: &mut Row) -> bool {
     }
 }
 
-/**
- * Return data at the row
- */
+/// Reads the data of a specified row from a database table.
+///
+/// # Arguments
+///
+/// * `db` - Database name.
+/// * `table` - Table name.
+/// * `key` - Key for the row to be read.
+///
+/// # Returns
+///
+/// Returns a Result containing the retrieved row if successful, or an error message if unsuccessful.
 pub fn read_row(db: &str, table: &str, key: &str) -> Result<Row, String> {
     let db_path: &str = &config::CONFIG.db_path;
 
@@ -83,9 +93,17 @@ pub fn read_row(db: &str, table: &str, key: &str) -> Result<Row, String> {
     };
 }
 
-/**
- * Delete one row
- */
+/// Deletes a specified row from a database table.
+///
+/// # Arguments
+///
+/// * `db` - Database name.
+/// * `table` - Table name.
+/// * `key` - Key for the row to be deleted.
+///
+/// # Returns
+///
+/// Returns true if the deletion is successful; false otherwise.
 pub fn delete_row(db: &str, table: &str, key: &str) -> bool {
     let db_path: &str = &config::CONFIG.db_path;
 
@@ -103,9 +121,17 @@ pub fn delete_row(db: &str, table: &str, key: &str) -> bool {
     }
 }
 
-/**
- * Check if row is exist
- */
+/// Checks if a specified row exists in a database table.
+///
+/// # Arguments
+///
+/// * `db` - Database name.
+/// * `table` - Table name.
+/// * `key` - Key for the row to be checked.
+///
+/// # Returns
+///
+/// Returns Ok(()) if the row exists; Err with an error message otherwise.
 pub fn is_row_exist(db: &str, table: &str, key: &str) -> Result<(), String> {
     let db_path: &str = &config::CONFIG.db_path;
 

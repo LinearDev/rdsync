@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":[["SECTIONS_IN_TX","Number of sections expected in the transmission."]],"fn":[["deserialize","Deserializes a [`TcpStream`] into header and body string sections."],["get_header","Parses a header string into a request type and [`RequestHeaders`]."]],"struct":[["RequestHeaders","Represents the headers of a request."]]};

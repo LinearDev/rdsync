@@ -4,6 +4,7 @@ use serde_json::Value;
 use simd_json::prelude::*;
 use serde::{Deserialize, Serialize};
 
+/// Represents a key-value pair with type of one value.
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Bunch {
     pub key: String,
@@ -11,6 +12,15 @@ pub struct Bunch {
     pub _type: String,
 }
 
+/// Retrieves the value associated with the specified key in the given table and database.
+///
+/// # Arguments
+///
+/// * `req` - A reference to the `RequestHeaders` containing information about the request.
+///
+/// # Returns
+///
+/// A `Result` containing the retrieved value or an error message.
 pub fn get(req: &receiver::RequestHeaders) -> Result<String, String> {
     let data: Result<Row, String> = cache::get(&req.db, &req.table, &req.key);
 
@@ -26,6 +36,16 @@ pub fn get(req: &receiver::RequestHeaders) -> Result<String, String> {
     }
 }
 
+/// Adds a new key-value pair to the specified table and database.
+///
+/// # Arguments
+///
+/// * `req` - A reference to the `RequestHeaders` containing information about the request.
+/// * `value` - The value to be added.
+///
+/// # Returns
+///
+/// A `Result` indicating success or an error message.
 pub fn add(req: &receiver::RequestHeaders, value: &str) -> Result<String, String> {
     let check: Result<(), String> = types::is_valid_data(&value, &req._type);
     match check {
@@ -44,6 +64,16 @@ pub fn add(req: &receiver::RequestHeaders, value: &str) -> Result<String, String
     }
 }
 
+/// Adds a bunch of key-value pairs to the specified table and database.
+///
+/// # Arguments
+///
+/// * `req` - A reference to the `RequestHeaders` containing information about the request.
+/// * `value` - A JSON string representing a list of `Bunch` objects.
+///
+/// # Returns
+///
+/// A `Result` indicating success or an error message.
 pub fn bunch(req: &receiver::RequestHeaders, value: &str) -> Result<String, String> {
     let res: Result<Vec<Bunch>, serde_json::Error> = serde_json::from_str::<Vec<Bunch>>(&value);
     let mut bunch: Vec<Bunch> = Vec::with_capacity(1024);
@@ -79,6 +109,15 @@ pub fn bunch(req: &receiver::RequestHeaders, value: &str) -> Result<String, Stri
 //     Ok(res)
 // }
 
+/// Deletes the specified key-value pair from the given table and database.
+///
+/// # Arguments
+///
+/// * `req` - A reference to the `RequestHeaders` containing information about the request.
+///
+/// # Returns
+///
+/// A `Result` indicating success or an error message.
 pub fn delete(req: &receiver::RequestHeaders) -> Result<String, String> {
     let status: Result<String, String> = cache::delete(&req.db, &req.table, &req.key);
 

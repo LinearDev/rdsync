@@ -1,12 +1,19 @@
-FROM rust:latest
+FROM rust:1.75.0-slim as BUILD
 
-WORKDIR /app/db
+WORKDIR /app-build/build
 
-VOLUME [ "/db" ]
-
-COPY ./db ./db
-COPY config.toml config.toml
+COPY ./src ./src
+COPY ./Cargo.toml ./Cargo.toml
 
 RUN cargo build --release
 
-CMD [ "./target/release/rust-database" ]
+FROM alpine:latest
+
+WORKDIR /app/rdsync
+VOLUME [ "/db" ]
+
+COPY --from=BUILD /app-build/build/target/release/rdsync /app/rdsync/rdsync
+
+COPY config.toml config.toml
+
+CMD [ "./rdsync" ]

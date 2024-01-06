@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["handle_request","Handles incoming requests based on the provided path."]]};

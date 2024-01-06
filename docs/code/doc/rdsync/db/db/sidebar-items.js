@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["delete","Deletes a database and its associated directory from the file system."]]};

@@ -1,3 +1,4 @@
+//! Caching module
 pub mod cache_table;
 pub mod cache_db;
 
@@ -11,20 +12,36 @@ use crate::cache::cache_table::Cache;
 
 use self::cache_table::TimeCache;
 
+/// Cache lookup key
 struct CacheKey {
+    /// Database name
     db: String,
+
+    /// Table name
     table: String,
+
+    /// Row key
     key: String
 }
 
-// static mut CACHE: Cache = Cache::new();
 lazy_static! {
+    /// Global cache instance
     pub  static ref CACHE: Mutex<Cache> = Mutex::new(Cache::new(CONFIG.cache_size.try_into().unwrap()));
 }
 
-/**
- * Add new row in cache table and in file db
- */
+/// Adds a new row to the cache table and the file database.
+///
+/// # Arguments
+///
+/// * `db` - Database name.
+/// * `table` - Table name.
+/// * `key` - Key for the new row.
+/// * `value` - Value to be associated with the key.
+/// * `_type` - Type information for the value.
+///
+/// # Returns
+///
+/// Returns true if the addition is successful; false if the key already exists in the cache.
 pub fn add(db: &str, table: &str, key: &str, value: &str, _type: &str) -> bool {
     let mut cache: MutexGuard<'_, Cache> = CACHE.lock().unwrap();
     let cache_key: String = to_cache_string(db, table, key).to_string();
@@ -50,9 +67,17 @@ pub fn add(db: &str, table: &str, key: &str, value: &str, _type: &str) -> bool {
     return true;
 }
 
-/**
- * Gets row from cache table
- */
+/// Retrieves a row from the cache table or the file database if not present in the cache.
+///
+/// # Arguments
+///
+/// * `db` - Database name.
+/// * `table` - Table name.
+/// * `key` - Key to retrieve the row.
+///
+/// # Returns
+///
+/// Returns a Result containing the retrieved row or an error message if the row is not found.
 pub fn get(db: &str, table: &str, key: &str) -> Result<Row, String> {
     let mut cache: MutexGuard<'_, Cache> = CACHE.lock().unwrap();
     let data: Option<&Row> = cache.get(&to_cache_string(db, table, key));
@@ -74,9 +99,17 @@ pub fn get(db: &str, table: &str, key: &str) -> Result<Row, String> {
     }
 }
 
-/**
- * Deletes row from cache and from file db
- */
+/// Deletes a row from the cache and the file database.
+///
+/// # Arguments
+///
+/// * `db` - Database name.
+/// * `table` - Table name.
+/// * `key` - Key of the row to be deleted.
+///
+/// # Returns
+///
+/// Returns a Result indicating the status of the deletion operation.
 pub fn delete(db: &str, table: &str, key: &str) -> Result<String, String> {
     let mut cache: MutexGuard<'_, Cache> = CACHE.lock().unwrap();
     let cache_key: String = to_cache_string(db, table, key);
@@ -92,18 +125,46 @@ pub fn delete(db: &str, table: &str, key: &str) -> Result<String, String> {
     }
 }
 
+/// Retrieves a vector of all keys currently present in the cache.
+///
+/// # Returns
+///
+/// Returns a vector containing all keys in the cache.
 pub fn keys() -> Vec<String> {
     return CACHE.lock().unwrap().keys();
 }
 
+/// Clears all entries from the cache.
+///
+/// This function removes all rows and associated time data from the cache.
 pub fn clear() {
     CACHE.lock().unwrap().clear();
 }
 
+/// Converts the database name, table name, and key into a formatted cache key string.
+///
+/// # Arguments
+///
+/// * `db` - Database name.
+/// * `table` - Table name.
+/// * `key` - Key to be included in the cache string.
+///
+/// # Returns
+///
+/// Returns a formatted cache key string combining the provided database, table, and key.
 fn to_cache_string(db: &str, table: &str, key: &str) -> String {
     return format!("{}|rdb|{}|rdb|{}", db, table, key);
 }
 
+/// Converts a cache key string into separate components (database, table, and key).
+///
+/// # Arguments
+///
+/// * `cache_string` - Cache key string to be parsed.
+///
+/// # Returns
+///
+/// Returns a `CacheKey` struct containing the extracted database, table, and key.
 fn from_cache_string(cache_string: String) -> CacheKey {
     let mut key: CacheKey = CacheKey {
         db: String::new(),
@@ -120,6 +181,16 @@ fn from_cache_string(cache_string: String) -> CacheKey {
     return key;
 }
 
+/// Deletes a table and its associated entries from both the cache and the file database.
+///
+/// # Arguments
+///
+/// * `db` - Database name.
+/// * `name` - Table name to be deleted.
+///
+/// # Returns
+///
+/// Returns true if the table deletion is successful; false otherwise.
 pub fn delete_table(db: &str, name: &str) -> bool {
     let status: bool = table::delete_table(db, name);
     if !status {

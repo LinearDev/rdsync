@@ -1,6 +1,17 @@
 use crate::db::db;
 use crate::cache;
 
+/// Deletes a database and its associated entries from both the file database and the cache.
+///
+/// # Arguments
+///
+/// * `name` - Name of the database to be deleted.
+///
+/// # Returns
+///
+/// Returns a Result indicating the status of the database deletion operation.
+/// - If the deletion is successful, it returns a JSON-formatted string with a success message.
+/// - If an error occurs during the deletion, it returns an error message.
 pub fn delete_db(name: &str) -> Result<String, String> {
     if let Err(err) = db::delete(name) {
         return Err(err);

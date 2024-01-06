@@ -1,6 +1,17 @@
+// Row message definition
 syntax = "proto2";
 
+/**
+* Message representing a database row.
+*/
 message Row {
+    /*
+    * Required - Value associated with the row
+    */
     required string value = 2;
+
+    /*
+     * Required - Data type of the value
+     */
     required string type = 3;
 }

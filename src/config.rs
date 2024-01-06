@@ -1,29 +1,48 @@
+//! Database startup configuration module
+
 use std::fs;
 use toml::Value;
 use lazy_static::lazy_static;
 
+// Struct to hold configuration values
 #[derive(Debug)]
 pub struct Config {
+    /// Database path
     pub db_path: String,
+
+    /// Server IP address
     pub ip: String,
+
+    /// Server port
     pub port: u16,
+
+    /// Cache size (in MB)
     pub cache_size: u16,
+
+    /// Thread pool size
     pub workers_count: u16
 }
 
+/// Enum to handle configuration-related errors
 #[derive(Debug)]
 pub enum ConfigError {
+    /// IO error
     IoError(std::io::Error),
+
+    /// TOML parsing error
     TomlError(toml::de::Error),
 }
 
+/// Lazy static instance of the configuration
 lazy_static! {
+    /// Global application configuration
     pub static ref CONFIG: Config = read_config().unwrap_or_else(|e| {
         eprintln!("Error reading configuration: {:?}", e);
         Default::default()
     });
 }
 
+/// Default implementation for Config
 impl Default for Config {
     fn default() -> Self {
         Config { 
@@ -36,6 +55,7 @@ impl Default for Config {
     }
 }
 
+/// Function to read the configuration from a TOML file
 pub fn read_config() -> Result<Config, ConfigError> {
     let mut conf: Config = Config::default();
 

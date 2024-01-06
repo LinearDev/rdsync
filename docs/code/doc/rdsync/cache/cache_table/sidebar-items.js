@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["expand_cache","Expands the cache by removing the entry with the lowest access time if the size limit is exceeded."]],"struct":[["Cache","Represents a cache storing rows and associated time metadata."],["TimeCache","Represents time-related metadata for entries in the cache."]]};

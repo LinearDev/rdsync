@@ -1,5 +1,26 @@
 use crate::http::{row_methods, receiver::RequestHeaders, table_methods, db_methods};
 
+/// Handles incoming requests based on the provided path.
+///
+/// # Arguments
+///
+/// * `path` - The type of the request.
+/// * `head` - The request headers.
+/// * `body` - The request body.
+///
+/// # Returns
+///
+/// * `Result<String, String>` - A `Result` containing the response or an error message.
+///
+/// # Examples
+///
+/// ```rust
+/// let result = handle_request("get_row", &request_headers, "request_body");
+/// match result {
+///     Ok(response) => println!("Response: {}", response),
+///     Err(error) => println!("Error: {}", error),
+/// }
+/// ```
 pub fn handle_request(path: &str, head: &RequestHeaders, body: &str) -> Result<String, String> {
     println!("[ INFO ]: get new request - `{}`", path);
 
@@ -49,9 +70,9 @@ pub fn handle_request(path: &str, head: &RequestHeaders, body: &str) -> Result<S
             return db_methods::delete(head);
         }
 
-        // Handle all other paths
+        /// Handle all other paths
         _ => {
-            // Return a 404 Not Found response for unrecognized paths
+            /// Return a `no action` Not Found response for unrecognized paths
             Ok("no action".to_string())
         }
     }

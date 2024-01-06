@@ -1,0 +1,67 @@
+html {
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    height: 100%;
+    /*background-color: #eee;*/
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 18px;
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+    box-shadow: 0 0 80px -10px rgba(139, 139, 139, 0.35);
+    z-index: 1;
+}
+
+header > div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex: 1;
+}
+
+header > div > .favicon {
+    width: 40px;
+}
+
+header > div > h1 {
+    font-size: 20px;
+}
+
+header > nav {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.content {
+    height: calc(100% - 71px);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: .25fr 1fr;
+}
+
+.content > aside {
+    height: 100%;
+    overflow: auto;
+    padding: 16px 10px;
+    border-right: 1px solid #eeeeee;
+    background-color: #eee;
+}
+
+.content > section {
+    overflow: auto;
+    background-color: #fff;
+    padding: 16px 10px;
+}

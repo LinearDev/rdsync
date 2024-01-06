@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["create","Creates a new table in the specified database."],["delete","Deletes the specified table from the given database."],["get","Retrieves all keys in the specified table and database."],["get_with_keys","Retrieves all keys along with their values and types in the specified table and database."]]};

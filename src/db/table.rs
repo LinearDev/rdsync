@@ -2,6 +2,16 @@ use std::{io::Error, fs::{self, remove_dir_all, ReadDir}};
 
 use crate::{db, config, http::row_methods::Bunch};
 
+/// Retrieves a list of keys representing rows in a specified database table.
+///
+/// # Arguments
+///
+/// * `db` - Database name.
+/// * `name` - Table name.
+///
+/// # Returns
+///
+/// Returns a Result containing a vector of row keys if successful, or an error message if unsuccessful.
 pub fn get_table(db: &str, name: &str) -> Result<Vec<String>, String> {
     let db_path: &str = &config::CONFIG.db_path;
 
@@ -24,6 +34,16 @@ pub fn get_table(db: &str, name: &str) -> Result<Vec<String>, String> {
     }
 }
 
+/// Retrieves data for all rows in a specified database table along with their keys.
+///
+/// # Arguments
+///
+/// * `db` - Database name.
+/// * `name` - Table name.
+///
+/// # Returns
+///
+/// Returns a Result containing a vector of Bunch (key-value pairs) if successful, or an error message if unsuccessful.
 pub fn get_table_with_keys(db: &str, name: &str) -> Result<Vec<Bunch>, String> {
     let db_path: &str = &config::CONFIG.db_path;
 
@@ -62,9 +82,16 @@ pub fn get_table_with_keys(db: &str, name: &str) -> Result<Vec<Bunch>, String> {
     }
 }
 
-/**
- * Creates new table
- */
+/// Creates a new table within a specified database.
+///
+/// # Arguments
+///
+/// * `db` - Database name.
+/// * `name` - Table name.
+///
+/// # Returns
+///
+/// Returns true if the table creation is successful; false otherwise.
 pub fn create_table(db: &str, name: &str) -> bool {
     let db_path: &str = &config::CONFIG.db_path;
 
@@ -75,9 +102,16 @@ pub fn create_table(db: &str, name: &str) -> bool {
     return db::init_dir(&format!("{}/{}/{}", db_path, db, name));
 }
 
-/**
- * Deletes one table
- */
+/// Deletes a specified table from a database.
+///
+/// # Arguments
+///
+/// * `db` - Database name.
+/// * `name` - Table name.
+///
+/// # Returns
+///
+/// Returns true if the table deletion is successful; false otherwise.
 pub fn delete_table(db: &str, name: &str) -> bool {
     let db_path: &str = &config::CONFIG.db_path;
 
@@ -92,9 +126,16 @@ pub fn delete_table(db: &str, name: &str) -> bool {
     }
 }
 
-/**
- * Checks if table exist
- */
+/// Checks if a specified table exists within a database.
+///
+/// # Arguments
+///
+/// * `db` - Database name.
+/// * `name` - Table name.
+///
+/// # Returns
+///
+/// Returns true if the table exists; false otherwise.
 pub fn is_table_exist(db: &str, name: &str) -> bool {
     return db::is_dir_exist(&format!("{}/{}", db, name));
 }

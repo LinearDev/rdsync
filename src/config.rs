@@ -48,9 +48,9 @@ impl Default for Config {
         Config { 
             db_path: "db".to_string(),
             ip: "127.0.0.1".to_string(),
-            port: 3000,
-            cache_size: 10,
-            workers_count: 4
+            port: 7045,
+            cache_size: 20,
+            workers_count: 128
         }
     }
 }

@@ -1,14 +1,14 @@
 version: '3.2'
 
 services:
-  api:
-    container_name: "db-service"
-    image: "db-service"
+  rdsync:
+    container_name: "lineardev/rdsync"
+    image: "lineardev/rdsync"
     build:
       context: .
       dockerfile: Dockerfile
-    entrypoint: ["./target/release/rust-database"]
+    entrypoint: ["./rdsync"]
     ports:
-      - 845:3000
+      - "7045"
     volumes:
-      - ./db:/app/db/db
+      - ./db:/app/rdsync/db

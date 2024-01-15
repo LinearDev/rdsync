@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["TX","Represents a transaction (TX) with request details."],["TxPool","A pool of transactions (TX) organized as a HashMap."]]};
+window.SIDEBAR_ITEMS = {"struct":["TX","TxPool"]};

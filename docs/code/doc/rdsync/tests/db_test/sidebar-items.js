@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":[["row_test",""],["table_test",""]]};
+window.SIDEBAR_ITEMS = {"mod":["row_test","table_test"]};

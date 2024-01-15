@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["delete","Deletes a database based on the information provided in the request headers."]]};
+window.SIDEBAR_ITEMS = {"fn":["delete"]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["delete_latest_tx","Deletes the latest transaction from the pool based on its key."],["get_latest_tx","Retrieves the latest transaction from the pool."],["is_pool_empty","Checks if the transaction pool is empty."]]};
+window.SIDEBAR_ITEMS = {"fn":["delete_latest_tx","get_latest_tx","is_pool_empty"]};

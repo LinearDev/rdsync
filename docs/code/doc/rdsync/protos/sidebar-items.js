@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":[["row","Generated file from `row.proto`"]]};
+window.SIDEBAR_ITEMS = {"mod":["row"]};

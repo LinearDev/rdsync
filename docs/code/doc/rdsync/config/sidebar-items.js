@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["ConfigError","Enum to handle configuration-related errors"]],"fn":[["read_config","Function to read the configuration from a TOML file"]],"struct":[["CONFIG","Global application configuration"],["Config",""]]};
+window.SIDEBAR_ITEMS = {"enum":["ConfigError"],"fn":["read_config"],"struct":["CONFIG","Config"]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":[["cache_test",""],["db_test",""]]};
+window.SIDEBAR_ITEMS = {"mod":["cache_test","db_test"]};

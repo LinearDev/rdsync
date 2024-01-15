@@ -7,6 +7,9 @@ pub mod row;
 /// Module for database operations.
 pub mod db;
 
+/// Module for filtering json data in row
+pub mod json_filter;
+
 use std::{fs::{self, ReadDir}, io::Error, path::Path};
 
 use crate::config;

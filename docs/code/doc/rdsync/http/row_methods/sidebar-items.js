@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["add","Adds a new key-value pair to the specified table and database."],["bunch","Adds a bunch of key-value pairs to the specified table and database."],["delete","Deletes the specified key-value pair from the given table and database."],["get","Retrieves the value associated with the specified key in the given table and database."]],"struct":[["Bunch","Represents a key-value pair with type of one value."]]};
+window.SIDEBAR_ITEMS = {"fn":["add","bunch","delete","filter","get"],"struct":["Bunch"]};

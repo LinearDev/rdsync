@@ -7,13 +7,14 @@ COPY ./Cargo.toml ./Cargo.toml
 
 RUN cargo build --release
 
-FROM alpine:latest
+FROM ubuntu:latest
 
 WORKDIR /app/rdsync
-VOLUME [ "/db" ]
 
-COPY --from=BUILD /app-build/build/target/release/rdsync /app/rdsync/rdsync
+COPY --from=BUILD /app-build/build/target/release/rdsync .
 
 COPY config.toml config.toml
+
+#EXPOSE 7045
 
 CMD [ "./rdsync" ]

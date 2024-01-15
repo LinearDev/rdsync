@@ -11,6 +11,7 @@ pub mod tx_pool;
 
 // The main function
 fn main() {
+    env!("RUST_BACKTRACE=1");
     // Reading configuration from file
     config::read_config().expect("[ ERROR ] Main: Can not read config");
 
@@ -22,6 +23,8 @@ fn main() {
 
     // Starting the transaction pool
     tx_pool::start();
+
+    db::json_filter::filter("test_db", "test_table");
 
     // Starting the transactional pipeline server
     http::start();

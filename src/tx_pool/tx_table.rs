@@ -38,7 +38,9 @@ impl TxPool {
     ///
     /// * A tuple containing a reference to the latest transaction and its key.
     pub fn get_one(&self) -> (&TX, String) {
-        let keys: Vec<String> = self.data.keys().cloned().collect();
+        let mut keys: Vec<String> = self.data.keys().cloned().collect();
+        //TODO: remove reverse
+        keys.reverse();
         let key = &keys[keys.len()-1];
         return (self.data.get(key).unwrap(), key.to_string())
     }

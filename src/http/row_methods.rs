@@ -1,4 +1,4 @@
-use crate::{db::row, protos::row::Row, cache, types, http::receiver};
+use crate::{db::{row, json_filter}, protos::row::Row, cache, types, http::receiver};
 
 use serde_json::Value;
 use simd_json::prelude::*;
@@ -33,6 +33,23 @@ pub fn get(req: &receiver::RequestHeaders) -> Result<String, String> {
         Err(err) => {
             return Err(err);
         }
+    }
+}
+
+//TODO: filtering non json
+pub fn filter(req: &receiver::RequestHeaders, data: &str) -> Result<String, String> {
+    if req._type == "json" {
+        match json_filter::filter(&req.db, &req.table, data) {
+            Ok(d) => {
+                let str = serde_json::to_string(&d).unwrap();
+                return Ok(str);
+            },
+            Err(e) => {
+                return Err(e);
+            }
+        }
+    } else {
+        Err("Now support only json filtering".to_string())
     }
 }
 

@@ -2,13 +2,19 @@ version: '3.2'
 
 services:
   rdsync:
-    container_name: "lineardev/rdsync"
-    image: "lineardev/rdsync"
+    container_name: "rdsync"
+    image: "rdsync"
     build:
       context: .
       dockerfile: Dockerfile
-    entrypoint: ["./rdsync"]
+    entrypoint: ["/app/rdsync/rdsync"]
     ports:
-      - "7045"
+      - "7045:7045"
     volumes:
       - ./db:/app/rdsync/db
+    networks:
+      - rd
+
+networks:
+  rd:
+    driver: bridge

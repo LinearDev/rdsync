@@ -25,9 +25,13 @@ pub fn handle_request(path: &str, head: &RequestHeaders, body: &str) -> Result<S
     println!("[ INFO ]: get new request - `{}`", path);
 
     match path {
-        // Handle "/row" path
+        // Handle row operations
         "get_row" => {
             return row_methods::get(head);
+        }
+
+        "filter_row" => {
+            return row_methods::filter(head, &body);
         }
 
         "add_row" => {
@@ -46,6 +50,7 @@ pub fn handle_request(path: &str, head: &RequestHeaders, body: &str) -> Result<S
             return row_methods::bunch(head, &body);
         }
 
+        // Handle table operations
         "get_table" => {
             return table_methods::get(head);
         }
@@ -65,6 +70,8 @@ pub fn handle_request(path: &str, head: &RequestHeaders, body: &str) -> Result<S
         // (&Method::POST, "/db") => {
         //     return methods::delete(req);
         // }
+
+        // Handle db operations
 
         "delete_db" => {
             return db_methods::delete(head);
